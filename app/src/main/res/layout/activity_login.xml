@@ -29,9 +29,9 @@
         android:inputType="number"
         android:textAlignment="center"
         android:textSize="22sp"
-        android:layout_marginBottom="69dp"
+        android:layout_marginBottom="74dp"
         app:layout_constraintBottom_toTopOf="@+id/login_btn"
-        android:layout_marginLeft="85dp"
+        android:layout_marginLeft="62dp"
         app:layout_constraintLeft_toLeftOf="parent" />
 
     <Button
@@ -47,5 +47,7 @@
         app:layout_constraintHorizontal_bias="0.529"
         app:layout_constraintBottom_toBottomOf="parent"
         android:layout_marginBottom="126dp" />
+
+
 
 </android.support.constraint.ConstraintLayout>
