@@ -8,23 +8,37 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.bedubs.rxfiller.PatientActivity$PlaceholderFragment">
 
-    <TextView
-        android:id="@+id/section_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/section_title"
-        android:layout_below="@+id/section_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        android:id="@+id/body"
+    <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_below="@+id/section_title"
-        android:layout_centerHorizontal="true"
-        android:text="TextView" />
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/rx_layout"
+            android:orientation="vertical"
+            android:isScrollContainer="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="15dp"
+            android:paddingBottom="50dp">
+
+            <TextView
+                android:id="@+id/section_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/section_pid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+
+            <TextView
+                android:id="@+id/rx_header"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="24sp" />
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </RelativeLayout>

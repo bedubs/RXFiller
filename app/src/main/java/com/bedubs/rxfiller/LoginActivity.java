@@ -21,9 +21,15 @@ public class LoginActivity extends AppCompatActivity {
 
     public void login(View view) {
 
-        Toast.makeText(getApplicationContext(), "Auto-thenticated: \nW" + edt.getText(), Toast.LENGTH_LONG).show();
-        Intent intent = new Intent(this, PatientActivity.class);
-        startActivity(intent);
+        String input = edt.getText().toString();
+
+        if (input.length() == 7) {
+            Toast.makeText(getApplicationContext(), "Auto-thenticated: \nW" + input, Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(this, PatientActivity.class);
+            startActivity(intent);
+        } else {
+            Toast.makeText(getApplicationContext(), "You must enter 7 digits to login." + input, Toast.LENGTH_LONG).show();
+        }
     }
 
 }

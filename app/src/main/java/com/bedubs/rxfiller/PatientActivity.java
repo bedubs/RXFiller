@@ -2,7 +2,6 @@ package com.bedubs.rxfiller;
 
 import android.app.ProgressDialog;
 import android.os.AsyncTask;
-import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -19,8 +18,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.xmlpull.v1.XmlPullParserException;
 
@@ -46,35 +46,16 @@ public class PatientActivity extends AppCompatActivity {
      * The {@link ViewPager} that will host the section contents.
      */
     private ViewPager mViewPager;
-    public static final String WIFI = "Wi-Fi";
-    public static final String ANY = "Any";
     private ProgressDialog spinner;
     private static final String URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/emr.xml";
     public static List<PatientInfo> pInfo;
-
-//    // Whether there is a Wi-Fi connection.
-//    private static boolean wifiConnected = false;
-//    // Whether there is a mobile connection.
-//    private static boolean mobileConnected = false;
-//    // Whether the display should be refreshed.
-//    public static boolean refreshDisplay = true;
-//    public static String sPref = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         new DownloadXmlTask().execute(URL);
-//        loadPage();
-        setContentView(R.layout.activity_patient);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        setContentView(R.layout.activity_patient);
 
     }
 
@@ -108,11 +89,6 @@ public class PatientActivity extends AppCompatActivity {
          * The fragment argument representing the section number for this
          * fragment.
          */
-        private static final String ARG_SECTION_NUMBER = "section_number";
-        private static final String ARG_PATIENT_ID = "patient_id";
-        private static final String ARG_PATIENT_NAME = "patient_name";
-        private static final String ARG_PATIENT_ORDERS = "patient_orders";
-        private static final String ARG_MED_COUNT = "med_count";
 
         public PlaceholderFragment() {
         }
@@ -123,16 +99,11 @@ public class PatientActivity extends AppCompatActivity {
          */
         public static PlaceholderFragment newInstance(int sectionNumber) {
             PatientInfo patientInfo = pInfo.get(sectionNumber);
-            List<PatientOrders> patientOrders = patientInfo.getOrders();
             PlaceholderFragment fragment = new PlaceholderFragment();
             Bundle args = new Bundle();
-            args.putInt(ARG_SECTION_NUMBER, sectionNumber);
-            args.putString(ARG_PATIENT_NAME, patientInfo.getName());
-            args.putString(ARG_PATIENT_ID, patientInfo.getId());
-            args.putInt(ARG_MED_COUNT, patientOrders.size());
-//            args.putParcelableArrayList("hey", patientOrders);
-            Log.println(Log.INFO, "TAG", "Patient med count: " + patientOrders.get(0).getMedicine());
+            args.putParcelable("patientData", patientInfo);
             fragment.setArguments(args);
+
             return fragment;
         }
 
@@ -140,13 +111,42 @@ public class PatientActivity extends AppCompatActivity {
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_patient, container, false);
-            TextView textView = (TextView) rootView.findViewById(R.id.section_label);
-            TextView titleView = (TextView) rootView.findViewById(R.id.section_title);
-            TextView bodyView = (TextView) rootView.findViewById(R.id.body);
-            titleView.setText(getString(R.string.name_format, getArguments().getString(ARG_PATIENT_NAME)));
-            textView.setText(getString(R.string.id_format, getArguments().getString(ARG_PATIENT_ID)));
-            bodyView.setText("This is the body\n Med count is: ");
-            bodyView.append(getArguments().getInt(ARG_MED_COUNT) + " ");
+
+            TextView nameView = (TextView) rootView.findViewById(R.id.section_name);
+            nameView.setTextSize(24);
+            TextView pidView = (TextView) rootView.findViewById(R.id.section_pid);
+            pidView.setTextSize(24);
+
+            PatientInfo patient = getArguments().getParcelable("patientData");
+            final List<PatientOrders> orders = patient.getOrders();
+
+            nameView.setText(getString(R.string.name_format, patient.getName()));
+            pidView.setText(getString(R.string.id_format, patient.getId()));
+
+            LinearLayout rxLayout = (LinearLayout) rootView.findViewById(R.id.rx_layout);
+            TextView rxHeader = (TextView) rootView.findViewById(R.id.rx_header);
+            rxHeader.setText(getString(R.string.rx_header, + patient.getOrders().size()));
+
+            for (int i=0; i < orders.size(); i++) {
+                final String meds = orders.get(i).getMedicine();
+                TextView bodyText = new TextView(getContext());
+                bodyText.setTextSize(24);
+                bodyText.append("\n\tRX: " + orders.get(i).getMedicine());
+                bodyText.append("\n\tDosage: " + orders.get(i).getDosage());
+                bodyText.append("\n\tRemaining: " + orders.get(i).getRefillsRemaining());
+                Button fillBtn = new Button(getActivity());
+                fillBtn.setText(getString(R.string.fill));
+                fillBtn.setOnClickListener(new View.OnClickListener(){
+                    @Override
+                    public void onClick(View view) {
+                        Snackbar.make(view, "Fill " + meds, Snackbar.LENGTH_LONG)
+                                .setAction("Action", null).show();
+                    }
+                });
+                rxLayout.addView(bodyText);
+                rxLayout.addView(fillBtn);
+            }
+
             return rootView;
         }
     }
@@ -171,20 +171,6 @@ public class PatientActivity extends AppCompatActivity {
             return pInfo.size();
         }
     }
-
-    // Uses AsyncTask to download the XML.
-//    public void loadPage() {
-//
-//        if((sPref.equals(ANY)) && (wifiConnected || mobileConnected)) {
-//            new DownloadXmlTask().execute(URL);
-//        }
-//        else if ((sPref.equals(WIFI)) && (wifiConnected)) {
-//            new DownloadXmlTask().execute(URL);
-//        } else {
-//            // show error
-//        }
-//        new DownloadXmlTask().execute(URL);
-//    }
 
     // Implementation of AsyncTask used to download XML.
     private class DownloadXmlTask extends AsyncTask<String, Void, String> {

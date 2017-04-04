@@ -1,10 +1,12 @@
 <resources>
     <string name="app_name">RX Filler</string>
-    <string name="title_activity_patient">PatientActivity</string>
+    <string name="title_activity_patient">Patient</string>
+    <string name="swipe_instruct">Swipe for next patient</string>
     <string name="connection_error">No Connection</string>
     <string name="xml_error">XML Error</string>
     <string name="action_settings">Settings</string>
-    <string name="section_format">Hello World from section: %1$d</string>
-    <string name="name_format">Patient Name: %s</string>
-    <string name="id_format">Patient ID: %s</string>
+    <string name="name_format">Patient: %s</string>
+    <string name="id_format">ID: %s</string>
+    <string name="fill">FILL</string>
+    <string name="rx_header">Current Prescriptions:  %d</string>
 </resources>
