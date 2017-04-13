@@ -52,6 +52,7 @@ public class PatientActivity extends AppCompatActivity {
      */
     private ViewPager mViewPager;
     private ProgressDialog spinner;
+    private String refillResponse;
     private static final String EMR_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/emr.xml";
     private static final String REFILL_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/rx_fill.php?";
     public static List<PatientInfo> pInfo;
@@ -259,6 +260,57 @@ public class PatientActivity extends AppCompatActivity {
 
     }
 
+    private static class RefillTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... params) {
+            InputStream is = null;
+            String response = "";
+            try {
+                is = downloadUrl(params[0]);
+                response = parse(is);
+                Log.println(Log.INFO, "RESPONSE", response);
+            } catch (IOException e) {
+                Log.println(Log.ERROR, "Refill", e.getMessage());
+            } catch (XmlPullParserException x) {
+                Log.println(Log.ERROR, "xmlparser", x.getMessage());
+            }
+
+            return response;
+        }
+
+        protected void onPostExecute(String result){
+            super.onPostExecute(result);
+
+            Log.println(Log.INFO, "RESULT", result);
+        }
+
+        private static final String ns = null;
+
+        String parse(InputStream in) throws XmlPullParserException, IOException {
+            String xmlValue = " ";
+            try {
+                XmlPullParser parser = Xml.newPullParser();
+                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+                parser.setInput(in, null);
+                parser.nextTag();
+
+                Log.println(Log.INFO, "valuetype", parser.getName());
+
+                String result = "";
+                parser.require(XmlPullParser.START_TAG, ns, parser.getName());
+                if (parser.next() == XmlPullParser.TEXT) {
+                    result = parser.getText();
+                    parser.nextTag();
+                }
+                parser.require(XmlPullParser.END_TAG, ns, parser.getName());
+
+                return result;
+            } finally {
+                in.close();
+            }
+        }
+    }
+
     private static InputStream downloadUrl(String urlString) throws IOException {
         URL url = new URL(urlString);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -269,44 +321,6 @@ public class PatientActivity extends AppCompatActivity {
         // Starts the query
         conn.connect();
         return conn.getInputStream();
-    }
-
-    private static class RefillTask extends AsyncTask<String, Void, String> {
-        @Override
-        protected String doInBackground(String... params) {
-            InputStream is = null;
-            String response = null;
-            try {
-                is = downloadUrl(params[0]);
-                response = parse(is);
-            } catch (IOException e) {
-                Log.println(Log.ERROR, "Refill", e.getMessage());
-            } catch (XmlPullParserException x) {
-                Log.println(Log.ERROR, "xmlparser", x.getMessage());
-            }
-
-            return response;
-        }
-
-        protected void onPostExecute(){
-
-        }
-
-        private static final String ns = null;
-
-        String parse(InputStream in) throws XmlPullParserException, IOException {
-            String xmlValue = " ";
-            try {
-                XmlPullParser parser = Xml.newPullParser();
-//                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
-//                parser.setInput(in, null);
-//                parser.nextTag();
-                xmlValue = parser.getText();
-                return xmlValue;
-            } finally {
-                in.close();
-            }
-        }
     }
 
 }
