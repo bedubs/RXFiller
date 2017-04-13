@@ -32,6 +32,7 @@ public class LoginActivity extends AppCompatActivity {
         if (input.length() == 7) {
             Toast.makeText(getApplicationContext(), "Auto-thenticated: \nW" + input, Toast.LENGTH_LONG).show();
             Intent intent = new Intent(this, PatientActivity.class);
+            intent.putExtra("user", input);
             startActivity(intent);
         } else {
             LayoutInflater inflater = getLayoutInflater();

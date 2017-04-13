@@ -1,6 +1,8 @@
 package com.bedubs.rxfiller;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
@@ -12,6 +14,7 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Xml;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -21,7 +24,9 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
@@ -47,13 +52,17 @@ public class PatientActivity extends AppCompatActivity {
      */
     private ViewPager mViewPager;
     private ProgressDialog spinner;
-    private static final String URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/emr.xml";
+    private static final String EMR_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/emr.xml";
+    private static final String REFILL_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/rx_fill.php?";
     public static List<PatientInfo> pInfo;
+    public static String userId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        new DownloadXmlTask().execute(URL);
+        Intent i = getIntent();
+        userId = i.getStringExtra("user");
+        new DownloadXmlTask().execute(EMR_URL);
 
         setContentView(R.layout.activity_patient);
 
@@ -117,7 +126,7 @@ public class PatientActivity extends AppCompatActivity {
             TextView pidView = (TextView) rootView.findViewById(R.id.section_pid);
             pidView.setTextSize(24);
 
-            PatientInfo patient = getArguments().getParcelable("patientData");
+            final PatientInfo patient = getArguments().getParcelable("patientData");
             final List<PatientOrders> orders = patient.getOrders();
 
             nameView.setText(getString(R.string.name_format, patient.getName()));
@@ -134,12 +143,28 @@ public class PatientActivity extends AppCompatActivity {
                 bodyText.append("\n\tRX: " + orders.get(i).getMedicine());
                 bodyText.append("\n\tDosage: " + orders.get(i).getDosage());
                 bodyText.append("\n\tRemaining: " + orders.get(i).getRefillsRemaining());
-                Button fillBtn = new Button(getActivity());
+                final Button fillBtn = new Button(getActivity());
                 fillBtn.setText(getString(R.string.fill));
                 fillBtn.setOnClickListener(new View.OnClickListener(){
                     @Override
                     public void onClick(View view) {
-                        Snackbar.make(view, "Fill " + meds, Snackbar.LENGTH_LONG)
+                        boolean refillSuccess = false;
+                        String urlString = REFILL_URL + "login=" + userId
+                                + "&id=" + patient.getId()
+                                + "&rx=" + meds;
+                        new RefillTask().execute(urlString);
+//                        try {
+////                            refillSuccess = refillRX(patient.getId(), meds);
+//                        } catch (IOException e) {
+//                            refillSuccess = false;
+//                        }
+
+                        if (refillSuccess) {
+                            Toast.makeText(getContext(), "Rx Refilled", Toast.LENGTH_LONG).show();
+                        } else {
+                            fillBtn.setBackgroundColor(Color.RED);
+                        }
+                        Snackbar.make(view, "Refill Success: " + refillSuccess, Snackbar.LENGTH_LONG)
                                 .setAction("Action", null).show();
                     }
                 });
@@ -232,20 +257,56 @@ public class PatientActivity extends AppCompatActivity {
             return patients.toString();
         }
 
-        // Given a string representation of a URL, sets up a connection and gets
-// an input stream.
-        private InputStream downloadUrl(String urlString) throws IOException {
-            URL url = new URL(urlString);
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setReadTimeout(10000 /* milliseconds */);
-            conn.setConnectTimeout(15000 /* milliseconds */);
-            conn.setRequestMethod("GET");
-            conn.setDoInput(true);
-            // Starts the query
-            conn.connect();
-            return conn.getInputStream();
+    }
+
+    private static InputStream downloadUrl(String urlString) throws IOException {
+        URL url = new URL(urlString);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setReadTimeout(10000 /* milliseconds */);
+        conn.setConnectTimeout(15000 /* milliseconds */);
+        conn.setRequestMethod("GET");
+        conn.setDoInput(true);
+        // Starts the query
+        conn.connect();
+        return conn.getInputStream();
+    }
+
+    private static class RefillTask extends AsyncTask<String, Void, String> {
+        @Override
+        protected String doInBackground(String... params) {
+            InputStream is = null;
+            String response = null;
+            try {
+                is = downloadUrl(params[0]);
+                response = parse(is);
+            } catch (IOException e) {
+                Log.println(Log.ERROR, "Refill", e.getMessage());
+            } catch (XmlPullParserException x) {
+                Log.println(Log.ERROR, "xmlparser", x.getMessage());
+            }
+
+            return response;
         }
 
+        protected void onPostExecute(){
+
+        }
+
+        private static final String ns = null;
+
+        String parse(InputStream in) throws XmlPullParserException, IOException {
+            String xmlValue = " ";
+            try {
+                XmlPullParser parser = Xml.newPullParser();
+//                parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+//                parser.setInput(in, null);
+//                parser.nextTag();
+                xmlValue = parser.getText();
+                return xmlValue;
+            } finally {
+                in.close();
+            }
+        }
     }
 
 }
