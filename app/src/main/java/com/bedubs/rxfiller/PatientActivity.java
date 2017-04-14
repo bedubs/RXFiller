@@ -53,16 +53,18 @@ public class PatientActivity extends AppCompatActivity {
     private ViewPager mViewPager;
     private ProgressDialog spinner;
     private String refillResponse;
+    Intent intent;
     private static final String EMR_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/emr.xml";
     private static final String REFILL_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/rx_fill.php?";
     public static List<PatientInfo> pInfo;
     public static String userId;
+    private static Button tempBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        Intent i = getIntent();
-        userId = i.getStringExtra("user");
+        intent = getIntent();
+        userId = intent.getStringExtra("user");
         new DownloadXmlTask().execute(EMR_URL);
 
         setContentView(R.layout.activity_patient);
@@ -149,22 +151,16 @@ public class PatientActivity extends AppCompatActivity {
                 fillBtn.setOnClickListener(new View.OnClickListener(){
                     @Override
                     public void onClick(View view) {
+                        tempBtn = fillBtn;
                         boolean refillSuccess = false;
+                        InputStream stream = null;
                         String urlString = REFILL_URL + "login=" + userId
                                 + "&id=" + patient.getId()
                                 + "&rx=" + meds;
                         new RefillTask().execute(urlString);
-//                        try {
-////                            refillSuccess = refillRX(patient.getId(), meds);
-//                        } catch (IOException e) {
-//                            refillSuccess = false;
-//                        }
 
-                        if (refillSuccess) {
-                            Toast.makeText(getContext(), "Rx Refilled", Toast.LENGTH_LONG).show();
-                        } else {
-                            fillBtn.setBackgroundColor(Color.RED);
-                        }
+                        Intent intent = new Intent(getContext(), PatientActivity.class);
+
                         Snackbar.make(view, "Refill Success: " + refillSuccess, Snackbar.LENGTH_LONG)
                                 .setAction("Action", null).show();
                     }
@@ -262,8 +258,14 @@ public class PatientActivity extends AppCompatActivity {
 
     private static class RefillTask extends AsyncTask<String, Void, String> {
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+
+        }
+
+        @Override
         protected String doInBackground(String... params) {
-            InputStream is = null;
+            InputStream is;
             String response = "";
             try {
                 is = downloadUrl(params[0]);
@@ -280,7 +282,10 @@ public class PatientActivity extends AppCompatActivity {
 
         protected void onPostExecute(String result){
             super.onPostExecute(result);
-
+            if (result.equals("success"))
+                tempBtn.setBackgroundColor(Color.GREEN);
+            else if (result.equals(("failure")))
+                tempBtn.setBackgroundColor(Color.RED);
             Log.println(Log.INFO, "RESULT", result);
         }
 
