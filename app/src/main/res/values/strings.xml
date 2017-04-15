@@ -9,4 +9,5 @@
     <string name="id_format">ID: %s</string>
     <string name="fill">FILL</string>
     <string name="rx_header">Current Prescriptions:  %d</string>
+    <string name="menu_refresh">Refresh</string>
 </resources>

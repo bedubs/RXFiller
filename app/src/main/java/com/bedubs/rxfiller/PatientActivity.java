@@ -1,10 +1,13 @@
 package com.bedubs.rxfiller;
 
+import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.design.widget.Snackbar;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -23,6 +26,7 @@ import android.view.ViewGroup;
 
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -31,6 +35,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.List;
@@ -52,13 +57,13 @@ public class PatientActivity extends AppCompatActivity {
      */
     private ViewPager mViewPager;
     private ProgressDialog spinner;
-    private String refillResponse;
     Intent intent;
     private static final String EMR_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/emr.xml";
     private static final String REFILL_URL = "http://www2.southeastern.edu/Academics/Faculty/jburris/rx_fill.php?";
     public static List<PatientInfo> pInfo;
     public static String userId;
-    private static Button tempBtn;
+    protected static Button tempBtn;
+    private static String refillResponse;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +93,12 @@ public class PatientActivity extends AppCompatActivity {
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
+        }
+
+        if (id == R.id.menu_refresh) {
+            Intent intent = new Intent(this, PatientActivity.class);
+            finish();
+            startActivity(intent);
         }
 
         return super.onOptionsItemSelected(item);
@@ -122,7 +133,7 @@ public class PatientActivity extends AppCompatActivity {
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
                                  Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_patient, container, false);
+            final View rootView = inflater.inflate(R.layout.fragment_patient, container, false);
 
             TextView nameView = (TextView) rootView.findViewById(R.id.section_name);
             nameView.setTextSize(24);
@@ -152,19 +163,14 @@ public class PatientActivity extends AppCompatActivity {
                     @Override
                     public void onClick(View view) {
                         tempBtn = fillBtn;
-                        boolean refillSuccess = false;
-                        InputStream stream = null;
                         String urlString = REFILL_URL + "login=" + userId
                                 + "&id=" + patient.getId()
                                 + "&rx=" + meds;
                         new RefillTask().execute(urlString);
-
-                        Intent intent = new Intent(getContext(), PatientActivity.class);
-
-                        Snackbar.make(view, "Refill Success: " + refillSuccess, Snackbar.LENGTH_LONG)
-                                .setAction("Action", null).show();
+                        Toast.makeText(getContext(), "Click REFRESH to update values.", Toast.LENGTH_LONG).show();
                     }
                 });
+
                 rxLayout.addView(bodyText);
                 rxLayout.addView(fillBtn);
             }
@@ -177,9 +183,9 @@ public class PatientActivity extends AppCompatActivity {
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
      */
-    public class SectionsPagerAdapter extends FragmentPagerAdapter {
+    private class SectionsPagerAdapter extends FragmentPagerAdapter {
 
-        public SectionsPagerAdapter(FragmentManager fm) {
+        SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
@@ -287,19 +293,17 @@ public class PatientActivity extends AppCompatActivity {
             else if (result.equals(("failure")))
                 tempBtn.setBackgroundColor(Color.RED);
             Log.println(Log.INFO, "RESULT", result);
+            refillResponse = result;
         }
 
         private static final String ns = null;
 
         String parse(InputStream in) throws XmlPullParserException, IOException {
-            String xmlValue = " ";
             try {
                 XmlPullParser parser = Xml.newPullParser();
                 parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
                 parser.setInput(in, null);
                 parser.nextTag();
-
-                Log.println(Log.INFO, "valuetype", parser.getName());
 
                 String result = "";
                 parser.require(XmlPullParser.START_TAG, ns, parser.getName());
@@ -328,4 +332,11 @@ public class PatientActivity extends AppCompatActivity {
         return conn.getInputStream();
     }
 
+    private void showDialog(String str) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getApplicationContext());
+        builder.setMessage(str)
+                .setTitle("Result");
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
 }
